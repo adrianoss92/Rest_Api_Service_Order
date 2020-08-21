@@ -1,4 +1,4 @@
-package com.algaworks.algafood.domain.service;
+package com.algaworks.algafood.domain.service.impl;
 
 import java.util.List;
 
@@ -11,6 +11,7 @@ import com.algaworks.algafood.domain.exeption.EntidadeEmUsoExeption;
 import com.algaworks.algafood.domain.exeption.EntidadeNaoEncontradaException;
 import com.algaworks.algafood.domain.model.Cozinha;
 import com.algaworks.algafood.domain.repository.CozinhaRepository;
+import com.algaworks.algafood.domain.service.CadastroCozinhaService;
 
 @Service
 public class CadastroCozinhaServiceImpl implements CadastroCozinhaService {
@@ -28,7 +29,6 @@ public class CadastroCozinhaServiceImpl implements CadastroCozinhaService {
 	
 	public Cozinha salvar(Cozinha cozinha) {
 		return cozinhaRepository.salvar(cozinha);
-
 	}
 
 	public void remover(Long id) {
