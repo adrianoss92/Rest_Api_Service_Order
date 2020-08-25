@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.stereotype.Service;
 
 import com.algaworks.algafood.domain.exeption.EntidadeEmUsoExeption;
 import com.algaworks.algafood.domain.exeption.EntidadeNaoEncontradaException;
@@ -12,7 +13,7 @@ import com.algaworks.algafood.domain.model.Estado;
 import com.algaworks.algafood.domain.repository.EstadoRepository;
 import com.algaworks.algafood.domain.service.CadastroEstadoService;
 
-
+@Service
 public class CadastroEstadoServiceImpl implements CadastroEstadoService {
 	
 	@Autowired

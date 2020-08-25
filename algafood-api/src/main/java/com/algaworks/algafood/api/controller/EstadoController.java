@@ -33,20 +33,20 @@ public class EstadoController {
 		return cadastroEstadoService.listar();
 	}
 	
-	@GetMapping("/estadoId")
-	public Estado buscar(Long id){
-		return cadastroEstadoService.buscar(id);
+	@GetMapping("/{estadoId}")
+	public Estado buscar(@PathVariable Long estadoId){
+		return cadastroEstadoService.buscar(estadoId);
 	}
 	
-	@PostMapping
+	@PostMapping()
 	@ResponseStatus(HttpStatus.CREATED)
 	public Estado salvar(@RequestBody Estado estado) {
 		return cadastroEstadoService.salvar(estado);
 	}
 	
-	@PutMapping
-	public ResponseEntity<Estado> atualizar(@PathVariable Long id, @RequestBody Estado estado){
-		Estado estadoAtualizado = cadastroEstadoService.buscar(id);
+	@PutMapping("/{estadoId}")
+	public ResponseEntity<Estado> atualizar(@PathVariable Long estadoId, @RequestBody Estado estado){
+		Estado estadoAtualizado = cadastroEstadoService.buscar(estadoId);
 		if(estadoAtualizado != null) {
 			estadoAtualizado.setNome(estado.getNome());
 			BeanUtils.copyProperties(estado, estadoAtualizado, "id");
