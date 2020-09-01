@@ -1,6 +1,7 @@
 package com.algaworks.algafood.api.controller;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,16 +20,16 @@ import org.springframework.web.bind.annotation.RestController;
 import com.algaworks.algafood.domain.exeption.EntidadeEmUsoExeption;
 import com.algaworks.algafood.domain.exeption.EntidadeNaoEncontradaException;
 import com.algaworks.algafood.domain.model.Cozinha;
-import com.algaworks.algafood.domain.service.CadastroCozinhaService;
+//import com.algaworks.algafood.domain.service.CadastroCozinhaService;
+import com.algaworks.algafood.domain.service.impl.CadastroCozinhaServiceImpl;
 
 @RestController // é possivel informar o tipo de media que todas as chamadas poderão receber
 				// inserindo o MediaType já na RequestMapping
 @RequestMapping(value = "/cozinhas")
 public class CozinhaController {
 
-	
 	@Autowired
-	private CadastroCozinhaService cadastroCozinhaService;
+	private CadastroCozinhaServiceImpl cadastroCozinhaService;
 
 	// @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE) // esta variação do
 	// GetMapping serve para
@@ -47,11 +48,11 @@ public class CozinhaController {
 		// o parametro @PathVariable onde ele sabe que o valor inserido
 		// após o cozinhas/ ira mudar, logo ele pega o valor passado no path e atribui a
 		// variavel que possui o mesmo nome
-		Cozinha cozinha = cadastroCozinhaService.buscar(cozinhaId);
+		Optional<Cozinha> cozinha = cadastroCozinhaService.buscar(cozinhaId);
 //		return ResponseEntity.status(HttpStatus.OK).body(cozinha);  Forma completa da notação da resposta mudando também o
 		// codigo do statusCode
-		if (cozinha != null) {
-			return ResponseEntity.ok(cozinha); // Forma Resumida
+		if (cozinha.isPresent()) {
+			return ResponseEntity.ok(cozinha.get()); // Forma Resumida
 		}
 		return ResponseEntity.notFound().build(); // Forma Resumida
 //		HttpHeaders headers = new HttpHeaders(); Utilizando a classe HttpHeaders é possivel setar qualquer informação
@@ -69,25 +70,29 @@ public class CozinhaController {
 	@PutMapping("/{cozinhaId}")
 	public ResponseEntity<Cozinha> atualizar(@PathVariable Long cozinhaId, @RequestBody Cozinha cozinha) {
 
-		Cozinha cozinhaAtual = cadastroCozinhaService.buscar(cozinhaId);
-		if (cozinhaAtual != null) {
-			cozinhaAtual.setNome(cozinha.getNome()); // Forma normal de atualizar os campos, porem se for um objeto
-														// muito grande isso acabara ficando dificil
-			// pois vamos ter que fazer este processo para cada atributo do projeto.
-
-			// Existe uma forma mais facil de fazer esta atualização que é utilizando um
-			// cara do Spring como mostra abaixo:
-			BeanUtils.copyProperties(cozinha, cozinhaAtual, "id"); // Este Bean do Spring faz o seguinte, atualiza as
-																	// informações de um objeto com base em um objeto
-																	// atual
+		Optional<Cozinha> cozinhaAtual = cadastroCozinhaService.buscar(cozinhaId);
+		if (cozinhaAtual.isPresent()) {
+			
+			BeanUtils.copyProperties(cozinha, cozinhaAtual.get(), "id");
+			// Este Bean do Spring faz o seguinte, atualiza as
+			// informações de um objeto com base em um objeto atual
 			// onde o primeiro objeto sera o objeto que esta com as informações que serão
 			// atualizadas no outro objeto.
 			// no terceiro parametro é passada informações que deverão ser ignoradas para
 			// não sofrerem alteração.
+			
+			//cozinhaAtual.setNome(cozinha.getNome()); 
+			// Forma normal de atualizar os campos, porem se for um objeto
+			// muito grande isso acabara ficando dificil
+			// pois vamos ter que fazer este processo para cada atributo do projeto.
 
-			cadastroCozinhaService.salvar(cozinhaAtual);
+			// Existe uma forma mais facil de fazer esta atualização que é utilizando um
+			// cara do Spring como mostra abaixo:
 
-			return ResponseEntity.ok(cozinhaAtual);
+
+			Cozinha cozinhaSalva = cadastroCozinhaService.salvar(cozinhaAtual.get());
+
+			return ResponseEntity.ok(cozinhaSalva);
 
 		}
 
@@ -100,9 +105,9 @@ public class CozinhaController {
 		try {
 			cadastroCozinhaService.remover(cozinhaId);
 			return ResponseEntity.noContent().build();
-		}catch (EntidadeNaoEncontradaException e){
+		} catch (EntidadeNaoEncontradaException e) {
 			return ResponseEntity.notFound().build();
-		}catch (EntidadeEmUsoExeption e) {
+		} catch (EntidadeEmUsoExeption e) {
 			return ResponseEntity.status(HttpStatus.CONFLICT).build();
 		}
 

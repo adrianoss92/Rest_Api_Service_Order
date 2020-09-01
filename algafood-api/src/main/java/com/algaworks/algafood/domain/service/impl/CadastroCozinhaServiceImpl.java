@@ -1,6 +1,7 @@
 package com.algaworks.algafood.domain.service.impl;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -11,29 +12,29 @@ import com.algaworks.algafood.domain.exeption.EntidadeEmUsoExeption;
 import com.algaworks.algafood.domain.exeption.EntidadeNaoEncontradaException;
 import com.algaworks.algafood.domain.model.Cozinha;
 import com.algaworks.algafood.domain.repository.CozinhaRepository;
-import com.algaworks.algafood.domain.service.CadastroCozinhaService;
+//import com.algaworks.algafood.domain.service.CadastroCozinhaService;
 
 @Service
-public class CadastroCozinhaServiceImpl implements CadastroCozinhaService {
+public class CadastroCozinhaServiceImpl {
 
 	@Autowired
 	private CozinhaRepository cozinhaRepository;
 	
 	public List<Cozinha> listar(){
-		return cozinhaRepository.listar();
+		return cozinhaRepository.findAll();
 	}
 	
-	public Cozinha buscar(Long id) {
-		return cozinhaRepository.buscar(id);
+	public Optional<Cozinha> buscar(Long id) {
+		return cozinhaRepository.findById(id);
 	}
 	
 	public Cozinha salvar(Cozinha cozinha) {
-		return cozinhaRepository.salvar(cozinha);
+		return cozinhaRepository.save(cozinha);
 	}
 
 	public void remover(Long id) {
 		try {
-			cozinhaRepository.remover(id);
+			cozinhaRepository.deleteById(id);
 		} catch (EmptyResultDataAccessException e) {
 			throw new EntidadeNaoEncontradaException(
 					String.format("Não localizado o cadastro da cozinha de código: %d ", id));

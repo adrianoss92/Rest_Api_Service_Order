@@ -1,6 +1,7 @@
 package com.algaworks.algafood.api.controller;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,14 +20,15 @@ import org.springframework.web.bind.annotation.RestController;
 import com.algaworks.algafood.domain.exeption.EntidadeEmUsoExeption;
 import com.algaworks.algafood.domain.exeption.EntidadeNaoEncontradaException;
 import com.algaworks.algafood.domain.model.Estado;
-import com.algaworks.algafood.domain.service.CadastroEstadoService;
+//import com.algaworks.algafood.domain.service.CadastroEstadoService;
+import com.algaworks.algafood.domain.service.impl.CadastroEstadoServiceImpl;
 
 @RestController
 @RequestMapping(value = "/estados")
 public class EstadoController {
 	
 	@Autowired
-	private CadastroEstadoService cadastroEstadoService;
+	private CadastroEstadoServiceImpl cadastroEstadoService;
 	
 	@GetMapping
 	public List<Estado> listar(){
@@ -34,8 +36,13 @@ public class EstadoController {
 	}
 	
 	@GetMapping("/{estadoId}")
-	public Estado buscar(@PathVariable Long estadoId){
-		return cadastroEstadoService.buscar(estadoId);
+	public ResponseEntity<Object> buscar(@PathVariable Long estadoId){
+		Optional<Estado> estado = cadastroEstadoService.buscar(estadoId);
+		if (estado.isPresent()) {
+			return ResponseEntity.ok(estado.get()); // Forma Resumida
+		}
+		return ResponseEntity.notFound().build();
+
 	}
 	
 	@PostMapping()
@@ -46,13 +53,12 @@ public class EstadoController {
 	
 	@PutMapping("/{estadoId}")
 	public ResponseEntity<Estado> atualizar(@PathVariable Long estadoId, @RequestBody Estado estado){
-		Estado estadoAtualizado = cadastroEstadoService.buscar(estadoId);
-		if(estadoAtualizado != null) {
-			estadoAtualizado.setNome(estado.getNome());
+		Optional<Estado> estadoAtualizado = cadastroEstadoService.buscar(estadoId);
+		if(estadoAtualizado.isPresent()) {
 			BeanUtils.copyProperties(estado, estadoAtualizado, "id");
-			
-			cadastroEstadoService.salvar(estadoAtualizado);
-			return ResponseEntity.ok(estadoAtualizado);
+
+			cadastroEstadoService.salvar(estadoAtualizado.get());
+			return ResponseEntity.ok(estadoAtualizado.get());
 		}
 		return ResponseEntity.notFound().build();
 	}

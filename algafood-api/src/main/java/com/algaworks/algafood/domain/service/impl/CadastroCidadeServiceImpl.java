@@ -1,6 +1,7 @@
 package com.algaworks.algafood.domain.service.impl;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -12,38 +13,39 @@ import com.algaworks.algafood.domain.exeption.EntidadeNaoEncontradaException;
 import com.algaworks.algafood.domain.model.Cidade;
 import com.algaworks.algafood.domain.model.Estado;
 import com.algaworks.algafood.domain.repository.CidadeRepository;
-import com.algaworks.algafood.domain.service.CadastroCidadeService;
-import com.algaworks.algafood.domain.service.CadastroEstadoService;
+//import com.algaworks.algafood.domain.service.CadastroCidadeService;
+//import com.algaworks.algafood.domain.service.CadastroEstadoService;
 
 @Service
-public class CadastroCidadeServiceImpl implements CadastroCidadeService {
+public class CadastroCidadeServiceImpl {
 
 	@Autowired
 	private CidadeRepository cidadeRepository;
-	
+
 	@Autowired
-	private CadastroEstadoService cadastroEstadoService;
-	
-	public List<Cidade> listar(){
-		return cidadeRepository.listar();
+	private CadastroEstadoServiceImpl cadastroEstadoService;
+
+	public List<Cidade> listar() {
+		return cidadeRepository.findAll();
 	}
-	
-	public Cidade buscar(Long id) {
-		return cidadeRepository.buscar(id);
+
+	public Optional<Cidade> buscar(Long id) {
+		return cidadeRepository.findById(id);
 	}
-	
+
 	public Cidade salvar(Cidade cidade) {
-		Long cidadeId = cidade.getEstado().getId();
-		Estado estado = cadastroEstadoService.buscar(cidadeId);
-		if(estado == null) {
-			throw new EntidadeNaoEncontradaException(String.format("Não existe cadastro de Estado com código: %d", cidadeId));
-		}
-		cidade.setEstado(estado);;
-		return cidadeRepository.salvar(cidade);
+		Long estadoId = cidade.getEstado().getId();
+		Estado estado = cadastroEstadoService.buscar(estadoId)
+				.orElseThrow(() 
+				->new EntidadeNaoEncontradaException(String.format("Não existe cadastro de cozinha com código: %d", estadoId)));
+
+		cidade.setEstado(estado);
+		return cidadeRepository.save(cidade);
 	}
+
 	public void remover(Long id) {
 		try {
-			cidadeRepository.remover(id);
+			cidadeRepository.deleteById(id);
 		} catch (EmptyResultDataAccessException e) {
 			throw new EntidadeNaoEncontradaException(
 					String.format("Não localizado o cadastro do Estado de código: %d ", id));
