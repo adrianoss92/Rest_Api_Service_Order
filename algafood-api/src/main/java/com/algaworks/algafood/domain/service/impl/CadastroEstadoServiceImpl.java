@@ -9,10 +9,9 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
 import com.algaworks.algafood.domain.exeption.EntidadeEmUsoExeption;
-import com.algaworks.algafood.domain.exeption.EntidadeNaoEncontradaException;
+import com.algaworks.algafood.domain.exeption.EstadoNaoEncontradaException;
 import com.algaworks.algafood.domain.model.Estado;
 import com.algaworks.algafood.domain.repository.EstadoRepository;
-//import com.algaworks.algafood.domain.service.CadastroEstadoService;
 
 @Service
 public class CadastroEstadoServiceImpl {
@@ -35,12 +34,15 @@ public class CadastroEstadoServiceImpl {
 		try {
 			estadoRepository.deleteById(id);
 		} catch (EmptyResultDataAccessException e) {
-			throw new EntidadeNaoEncontradaException(
-					String.format("Não localizado o cadastro do Estado de código: %d ", id));
+			throw new EstadoNaoEncontradaException(id);
 		} catch (DataIntegrityViolationException e) {
 			throw new EntidadeEmUsoExeption(
 					String.format("Estado de código %d não pode ser removida, pois está em uso", id));
 		}
 	}
 	
+	public Estado buscarOuFalhar(Long id) {
+		return estadoRepository.findById(id)
+				.orElseThrow(() -> new EstadoNaoEncontradaException(id));
+	}
 }

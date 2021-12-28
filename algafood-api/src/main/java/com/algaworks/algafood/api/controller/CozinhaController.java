@@ -1,12 +1,12 @@
 package com.algaworks.algafood.api.controller;
 
 import java.util.List;
-import java.util.Optional;
+
+import javax.validation.Valid;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,8 +17,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.algaworks.algafood.domain.exeption.EntidadeEmUsoExeption;
-import com.algaworks.algafood.domain.exeption.EntidadeNaoEncontradaException;
 import com.algaworks.algafood.domain.model.Cozinha;
 //import com.algaworks.algafood.domain.service.CadastroCozinhaService;
 import com.algaworks.algafood.domain.service.impl.CadastroCozinhaServiceImpl;
@@ -43,37 +41,22 @@ public class CozinhaController {
 
 //	@ResponseStatus(HttpStatus.BAD_GATEWAY)
 	@GetMapping(value = "/{cozinhaId}")
-	public ResponseEntity<Cozinha> buscar(@PathVariable Long cozinhaId) {
-		// Para pegar uma informação do path que é variavel é possivel fazela utilizando
-		// o parametro @PathVariable onde ele sabe que o valor inserido
-		// após o cozinhas/ ira mudar, logo ele pega o valor passado no path e atribui a
-		// variavel que possui o mesmo nome
-		Optional<Cozinha> cozinha = cadastroCozinhaService.buscar(cozinhaId);
-//		return ResponseEntity.status(HttpStatus.OK).body(cozinha);  Forma completa da notação da resposta mudando também o
-		// codigo do statusCode
-		if (cozinha.isPresent()) {
-			return ResponseEntity.ok(cozinha.get()); // Forma Resumida
-		}
-		return ResponseEntity.notFound().build(); // Forma Resumida
-//		HttpHeaders headers = new HttpHeaders(); Utilizando a classe HttpHeaders é possivel setar qualquer informação
-//		// o Header da resposta
-//		headers.add(HttpHeaders.LOCATION, "Novo link para acessar o a pagina"); // como neste exemplo
-//		return ResponseEntity.status(HttpStatus.FOUND).headers(headers).build();
+	public Cozinha buscar(@PathVariable Long cozinhaId) {
+		return cadastroCozinhaService.buscarOuFalhar(cozinhaId);
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public Cozinha adcionar(@RequestBody Cozinha cozinha) {
+	public Cozinha adcionar(@RequestBody @Valid Cozinha cozinha) {
 		return cadastroCozinhaService.salvar(cozinha);
 	}
 
 	@PutMapping("/{cozinhaId}")
-	public ResponseEntity<Cozinha> atualizar(@PathVariable Long cozinhaId, @RequestBody Cozinha cozinha) {
-
-		Optional<Cozinha> cozinhaAtual = cadastroCozinhaService.buscar(cozinhaId);
-		if (cozinhaAtual.isPresent()) {
-			
-			BeanUtils.copyProperties(cozinha, cozinhaAtual.get(), "id");
+	public Cozinha atualizar(@PathVariable Long cozinhaId, @RequestBody @Valid Cozinha cozinha) {
+		Cozinha cozinhaAtual = cadastroCozinhaService.buscarOuFalhar(cozinhaId);
+		
+	
+			BeanUtils.copyProperties(cozinha, cozinhaAtual, "id");
 			// Este Bean do Spring faz o seguinte, atualiza as
 			// informações de um objeto com base em um objeto atual
 			// onde o primeiro objeto sera o objeto que esta com as informações que serão
@@ -90,26 +73,12 @@ public class CozinhaController {
 			// cara do Spring como mostra abaixo:
 
 
-			Cozinha cozinhaSalva = cadastroCozinhaService.salvar(cozinhaAtual.get());
-
-			return ResponseEntity.ok(cozinhaSalva);
-
-		}
-
-		return ResponseEntity.notFound().build();
-
+			return cadastroCozinhaService.salvar(cozinhaAtual);
 	}
-
+	
 	@DeleteMapping("/{cozinhaId}")
-	public ResponseEntity<Cozinha> remover(@PathVariable Long cozinhaId) {
-		try {
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void removerTeste(@PathVariable Long cozinhaId) {
 			cadastroCozinhaService.remover(cozinhaId);
-			return ResponseEntity.noContent().build();
-		} catch (EntidadeNaoEncontradaException e) {
-			return ResponseEntity.notFound().build();
-		} catch (EntidadeEmUsoExeption e) {
-			return ResponseEntity.status(HttpStatus.CONFLICT).build();
-		}
-
 	}
 }

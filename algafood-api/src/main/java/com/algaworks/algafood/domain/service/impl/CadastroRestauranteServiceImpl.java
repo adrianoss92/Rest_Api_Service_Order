@@ -9,12 +9,10 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
 import com.algaworks.algafood.domain.exeption.EntidadeEmUsoExeption;
-import com.algaworks.algafood.domain.exeption.EntidadeNaoEncontradaException;
+import com.algaworks.algafood.domain.exeption.RestauranteNaoEncontradoException;
 import com.algaworks.algafood.domain.model.Cozinha;
 import com.algaworks.algafood.domain.model.Restaurante;
 import com.algaworks.algafood.domain.repository.RestauranteRepository;
-//import com.algaworks.algafood.domain.service.CadastroCozinhaService;
-//import com.algaworks.algafood.domain.service.CadastroRestauranteService;
 
 @Service
 public class CadastroRestauranteServiceImpl {
@@ -35,9 +33,8 @@ public class CadastroRestauranteServiceImpl {
 	
 	public Restaurante salvar(Restaurante restaurante) {
 		Long cozinhaId = restaurante.getCozinha().getId();
-		Cozinha cozinha = cadastroCozinhaService.buscar(cozinhaId)
-				.orElseThrow(() ->   
-				new EntidadeNaoEncontradaException(String.format("Não existe cadastro de cozinha com código: %d", cozinhaId)));
+
+		Cozinha cozinha = cadastroCozinhaService.buscarOuFalhar(cozinhaId);
 		// No código acima, caso não retornar nenhuma cozinha ele ira retornar o erro de Entidade não encontrada.
 		restaurante.setCozinha(cozinha);
 		return restauranteRepository.save(restaurante);
@@ -46,11 +43,15 @@ public class CadastroRestauranteServiceImpl {
 		try {
 			restauranteRepository.deleteById(id);
 		} catch (EmptyResultDataAccessException e) {
-			throw new EntidadeNaoEncontradaException(
-					String.format("Não localizado o cadastro do restaurante de código: %d ", id));
+			throw new RestauranteNaoEncontradoException(id);
 		} catch (DataIntegrityViolationException e) {
 			throw new EntidadeEmUsoExeption(
 					String.format("Restaurante de código %d não pode ser removida, pois está em uso", id));
 		}
+	}
+	
+	public Restaurante buscarOuFalhar(Long restauranteId) {
+	    return restauranteRepository.findById(restauranteId)
+	        .orElseThrow(() -> new RestauranteNaoEncontradoException(restauranteId));
 	}
 }
