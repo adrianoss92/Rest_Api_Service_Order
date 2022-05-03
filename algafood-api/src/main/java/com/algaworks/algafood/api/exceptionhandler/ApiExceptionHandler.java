@@ -1,16 +1,21 @@
 package com.algaworks.algafood.api.exceptionhandler;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.TypeMismatchException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -37,6 +42,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	public static final String MSG_ERRO_GENERICA_USUARIO_FINAL
 	= "Ocorreu um erro interno inesperado no sistema. Tente novamente e se "
 			+ "o problema persistir, entre em contato com o administrador do sistema.";
+	
+	@Autowired
+	private MessageSource messageSource;
 	
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<Object> handleUncaught(Exception ex, WebRequest request) {
@@ -109,9 +117,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(NegocioException.class)
 	public ResponseEntity<?> handleNegocio(NegocioException  ex, WebRequest request){
 		
-		HttpStatus status = HttpStatus.CONFLICT;
+		HttpStatus status = HttpStatus.BAD_REQUEST;
 		String detail = ex.getMessage();
-		ProblemType problemType = ProblemType.ENTIDADE_EM_USO;
+		ProblemType problemType = ProblemType.ERRO_NEGOCIO;
 	
 		
 		Problema problema = createProblemaBuilder(status, problemType, detail).build();
@@ -133,20 +141,26 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return handleExceptionInternal(ex, problema, new HttpHeaders(), status, request);
 	}
 	
+	@ExceptionHandler({ ValidacaoException.class })
+	public ResponseEntity<Object> handleValidacaoException(ValidacaoException ex, WebRequest request) {
+	    return handleValidationInternal(ex, ex.getBindingResult(), new HttpHeaders(), 
+	            HttpStatus.BAD_REQUEST, request);
+	}
+	
 
 	protected ResponseEntity<Object> handleException(Exception ex, Object body, HttpHeaders headers,
 			HttpStatus status, WebRequest request) {
 		
 		if(body == null) {
 			body = Problema.builder()
-					.timestamp(LocalDateTime.now())
+					.timestamp(OffsetDateTime.now())
 					.title(status.getReasonPhrase())
 					.status(status.value())
 					.userMessage(MSG_ERRO_GENERICA_USUARIO_FINAL)
 					.build();
 		} else if(body instanceof String) {
 			body = Problema.builder()
-					.timestamp(LocalDateTime.now())
+					.timestamp(OffsetDateTime.now())
 					.title((String) body)
 					.status(status.value())
 					.userMessage(MSG_ERRO_GENERICA_USUARIO_FINAL)
@@ -181,25 +195,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
 	        HttpHeaders headers, HttpStatus status, WebRequest request) {
 
-	    ProblemType problemType = ProblemType.DADOS_INVALIDOS;
-	    String detail = "Um ou mais campos estão inválidos. Faça o preenchimento correto e tente novamente.";
-	    
-	    BindingResult bindigResult = ex.getBindingResult();
-	    
-	    
-	    List<Problema.Field> problemaFilds = bindigResult.getFieldErrors().stream()
-	    		.map(fildError -> Problema.Field.builder()
-	    				.name(fildError.getField())
-	    				.userMessage(fildError.getDefaultMessage())
-	    				.build())
-	    		.collect(Collectors.toList());
-	    
-	    Problema problema = createProblemaBuilder(status, problemType, detail)
-	        .userMessage(detail)
-	        .fields(problemaFilds)
-	        .build();
-	    
-	    return handleExceptionInternal(ex, problema, headers, status, request);
+		return handleValidationInternal(ex, ex.getBindingResult(), headers, status, request);
 	} 
 	
 	@Override
@@ -214,6 +210,37 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	    
 	    return super.handleExceptionInternal(ex, problema, headers, status, request);
 	}
+	
+	private ResponseEntity<Object> handleValidationInternal(Exception ex, BindingResult bindingResult, HttpHeaders headers,
+			HttpStatus status, WebRequest request) {
+		        
+		    ProblemType problemType = ProblemType.DADOS_INVALIDOS;
+		    String detail = "Um ou mais campos estão inválidos. Faça o preenchimento correto e tente novamente.";
+		    
+		    List<Problema.Field> problemObjects = bindingResult.getAllErrors().stream()
+		            .map(objectError -> {
+		                String message = messageSource.getMessage(objectError, LocaleContextHolder.getLocale());
+		                
+		                String name = objectError.getObjectName();
+		                
+		                if (objectError instanceof FieldError) {
+		                    name = ((FieldError) objectError).getField();
+		                }
+		                
+		                return Problema.Field.builder()
+		                    .name(name)
+		                    .userMessage(message)
+		                    .build();
+		            })
+		            .collect(Collectors.toList());
+		    
+		    Problema problem = createProblemaBuilder(status, problemType, detail)
+		        .userMessage(detail)
+		        .fields(problemObjects)
+		        .build();
+		    
+		    return handleExceptionInternal(ex, problem, headers, status, request);
+		}
 
 	private ResponseEntity<Object> handleMethodArgumentTypeMismatch(
 	        MethodArgumentTypeMismatchException ex, HttpHeaders headers,
@@ -232,6 +259,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 	
 	private Problema.ProblemaBuilder createProblemaBuilder(HttpStatus status, ProblemType problemType, String detail) {
 		return Problema.builder()
+				.timestamp(OffsetDateTime.now())
 				.status(status.value())
 				.type(problemType.getUri())
 				.title(problemType.getTitle())

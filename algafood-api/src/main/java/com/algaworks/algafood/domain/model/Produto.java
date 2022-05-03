@@ -1,5 +1,7 @@
 package com.algaworks.algafood.domain.model;
 
+import java.math.BigDecimal;
+
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.Entity;
@@ -29,7 +31,7 @@ public class Produto {
 	private String descricao;
 	
 	@Column(nullable = false)
-	private Double preco;
+	private BigDecimal preco;
 	
 	@Column(nullable = false)
 	private Boolean ativo;
