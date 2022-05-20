@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonFilter;
 import lombok.Getter;
 import lombok.Setter;
 
-@JsonFilter("pedidoFilter") //Esta anotação serve para filtrar os dados do objeto que serão representados, assim como no jsonView, mas de uma forma diferente como demonstrado na classe pedidoController
+//@JsonFilter("pedidoFilter") //Esta anotação serve para filtrar os dados do objeto que serão representados, assim como no jsonView, mas de uma forma diferente como demonstrado na classe pedidoController
 @Setter
 @Getter
 public class PedidoResumoModel {
